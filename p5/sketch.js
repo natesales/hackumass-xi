@@ -16,7 +16,8 @@ let CONTROLLERS = [];
 var skins = [];
 
 let prevTime = 0;
-let debounceTime = 0.15;
+let debounceTime = 150;
+let BUTTONDEBOUNCE = {};
 
 function raycast(p, dir, base) {
   let currentColor = get(p[0], p[1])[0];
@@ -122,21 +123,27 @@ const player = {
 
       if (controller.buttons) {
         for (let btn = 0; btn < controller.buttons.length; btn++) {
-          print(dt)
-          if(controller.buttons[btn].pressed && prevTime > debounceTime) {
-            print ("pushed button value " + btn)
-          }
+          //print(dt)
+          // if(controller.buttons[btn].pressed) {
+          //   print ("pushed button value " + btn +" at " + millis())
+          //   if(BUTTONDEBOUNCE[btn] == undefined || millis() - BUTTONDEBOUNCE[btn] > debounceTime) {
+          //     BUTTONDEBOUNCE[btn] = millis();
+          //     print("valid");
+          //   }
+          // }
           
-          if (controller.buttons[btn].pressed && btn == 6 && prevTime > debounceTime) {
+          if (controller.buttons[btn].pressed && btn == 6 && millis() - (BUTTONDEBOUNCE[6]||0) > debounceTime) {
             this.skinIndex--;
             if (this.skinIndex < 0) {
               this.skinIndex = skins.length - 1;
             }
             this.skinIndex %= skins.length;
+            BUTTONDEBOUNCE[6] = millis();
           }
-          if (controller.buttons[btn].pressed && btn == 7 && prevTime > debounceTime) {
+          if (controller.buttons[btn].pressed && btn == 7 && millis() - (BUTTONDEBOUNCE[7]||0) > debounceTime) {
             this.skinIndex++;
             this.skinIndex %= skins.length;
+            BUTTONDEBOUNCE[7] = millis();
           }
         }
       }
@@ -148,10 +155,6 @@ const player = {
             }
           }
         }
-      }
-
-      if(prevTime > debounceTime) {
-        prevTime = 0;
       }
     }
 
