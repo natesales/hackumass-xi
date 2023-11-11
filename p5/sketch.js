@@ -197,9 +197,15 @@ const player = {
 
 function preload() {
   skins = [
+    loadImage("./skins/alien.png"),
     loadImage("./skins/fish.png"),
+    loadImage("./skins/flower.png"),
     loadImage("./skins/frog.png"),
-    loadImage("./skins/ghost.png"),
+    loadImage("./skins/ladybug.png"),
+    loadImage("./skins/penguin.png"),
+    loadImage("./skins/purple_guy.png"),
+    loadImage("./skins/snake.png"),
+    loadImage("./skins/tiger.png"),
   ];
 }
 
