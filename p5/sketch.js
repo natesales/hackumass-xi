@@ -2,13 +2,10 @@ const average = (array) => array.reduce((a, b) => a + b) / array.length;
 Number.prototype.clamp = function (min, max) {
   return Math.min(Math.max(this, min), max);
 };
-
+const EDGES = [];
 const IN = 100;
-const SIZE = [11 * IN, 8.5 * IN];
-const PROJECTED = true;
-
-let mouseDown = false;
-let lastPos = null;
+const SIZE = [9 * IN, 6.5 * IN];
+const PROJECTED = false;
 
 const KEYS = {};
 let CONTROLLERS = [];
@@ -217,19 +214,16 @@ function setup() {
       e.gamepad.axes.length
     );
   });
-  createCanvas(...SIZE);
+  createCanvas(windowWidth, windowHeight);
   background(255);
   frameRate(60);
 }
 
 function mousePressed() {
-  lastPos = null;
-  mouseDown = true;
-}
-
-function mouseReleased() {
-  lastPos = null;
-  mouseDown = false;
+  if (EDGES.length === 4) {
+    return;
+  }
+  EDGES.push([mouseX, mouseY]);
 }
 
 function keyPressed() {
@@ -241,18 +235,19 @@ function keyReleased() {
 
 const mouseSpots = [];
 
+const renderLevel = () => {
+  stroke(0);
+  strokeWeight(IN / 4);
+  line(0.5 * IN, 2.5 * IN, 2 * IN, 2.5 * IN);
+  line(2.0 * IN, 2.5 * IN, 4 * IN, 4.5 * IN);
+  line(4 * IN, 4.5 * IN, 8 * IN, 3 * IN);
+};
+
 function draw() {
   background(255);
   noSmooth();
 
-  stroke(0);
-  strokeWeight(IN / 4);
-
-  line(0.5 * IN, 2.5 * IN, 2 * IN, 2.5 * IN);
-
-  line(2.0 * IN, 2.5 * IN, 4 * IN, 4.5 * IN);
-
-  line(4 * IN, 4.5 * IN, 8 * IN, 3 * IN);
+  renderLevel();
 
   for (const p of mouseSpots) {
     fill(0);
@@ -270,9 +265,35 @@ function draw() {
 
   player.update(deltaTime / 1000);
 
-  if (PROJECTED) {
-    background(255);
+  if (EDGES.length == 4){
+    background(0);
+    stroke(0);
+    strokeWeight(4);
+    fill(255);
+  
+    beginShape();
+    for (const [x, y] of EDGES) {
+      vertex(x, y);
+    }
+    endShape(CLOSE);
+
+    const [tl, tr, br, bl] = EDGES;
+
+    const w = dist(tl[0], tl[1], tr[0], tr[1]);
+    const h = dist(tl[0], tl[1], bl[0], bl[1]);
+
+    const dx = tl[0];
+    const dy = tl[1];
+
+    const sx = w / width;
+    const sy = h / height;
+
+    translate(dx, dy);
+    scale(sx, sy);
   }
 
+  renderLevel();
+
   player.render();
+  resetMatrix();
 }
