@@ -9,6 +9,8 @@ let lastPos = null;
 const KEYS = {}
 let CONTROLLERS = []
 
+var skins = [];
+
 function raycast(p, dir){
   let currentColor = get(p[0], p[1])[0];
   let count = 0;
@@ -33,6 +35,7 @@ const player = {
   vy: 0,
   ax: 0,
   ay: 0,
+  skinIndex: 0,
   grounded: false,
   update: function(dt){
     this.ay = 0;
@@ -101,6 +104,17 @@ const player = {
           // if(controller.buttons[btn].pressed) {
           //   print ("pushed button value " + btn)
           // }
+          if(controller.buttons[btn].pressed && btn == 6) {
+            this.skinIndex--;
+            if(this.skinIndex < 0) {
+              this.skinIndex = skins.length - 1;
+            }
+            this.skinIndex %= skins.length;
+          }
+          if(controller.buttons[btn].pressed && btn == 7) {
+            this.skinIndex++;
+            this.skinIndex %= skins.length;
+          }
         }
       }
       if (controller.axes) {
@@ -145,6 +159,8 @@ const player = {
     fill(this.grounded ? "green" : "red");
     noStroke()
     rect(this.x, this.y, this.w, this.h)
+    //instead of rect use image
+    image(skins[this.skinIndex], this.x, this.y, this.w, this.h);
     
     const points = this.getPOI();
 
@@ -154,6 +170,14 @@ const player = {
       point(...p)
     }
   }
+}
+
+function preload() {
+  skins = [
+    loadImage("./skins/fish.png"),
+    loadImage("./skins/frog.png"),
+    loadImage("./skins/ghost.png"),
+  ]
 }
 
 function setup() {
@@ -188,6 +212,7 @@ function keyReleased() {
 const mouseSpots = []
 
 function draw() {
+  noSmooth();
   background(255);
   
   stroke(0);
