@@ -1,12 +1,13 @@
 const average = array => array.reduce((a, b) => a + b) / array.length;
 const IN = 100
 const SIZE = [11 * IN, 8.5 * IN]
-const PROJECTED = true;
+const PROJECTED = false;
 
 let mouseDown = false;
 let lastPos = null;
 
 const KEYS = {}
+let CONTROLLERS = []
 
 function raycast(p, dir){
   let currentColor = get(p[0], p[1])[0];
@@ -70,7 +71,7 @@ const player = {
       this.grounded = true;
     } else if (middleDist > 1) {
       this.grounded = false;
-      this.ay += 64 * IN * dt;
+      this.ay += 128 * IN * dt;
     } else if (middleDist == 0) {
       this.grounded = true;
       const correction = min(...up);
@@ -80,14 +81,40 @@ const player = {
       }
     }
     
+    // Keyboard input
+    const AX = 96 * IN * dt;
     if (KEYS[39]){
-      this.ax += 64 * IN * dt;
+      this.ax += AX;
+    }    
+    if (KEYS[37]){
+      this.ax -= AX;
     }
     
-        
-    if (KEYS[37]){
-      this.ax -= 64 * IN * dt;
+    var gamepads = navigator.getGamepads()
+    for (let i in CONTROLLERS) { 
+      let controller=gamepads[i]
+
+      if (controller.buttons) {
+        for (let btn=0;btn<controller.buttons.length;btn++) {
+
+          // //button operations/checking HERE:
+          // if(controller.buttons[btn].pressed) {
+          //   print ("pushed button value " + btn)
+          // }
+        }
+      }
+      if (controller.axes) {
+        for (let axis=0;axis<controller.axes.length;axis++) {
+
+          if(axis%2 == 0) {
+            this.ax += controller.axes[axis] * AX;
+          } else {
+            // this.ay += controller.axes[axis] * 64 * IN;
+          }
+        }
+      }
     }
+    
     
     if (this.grounded) {
       this.vx *= 1 - (0.94 * dt);
@@ -130,6 +157,12 @@ const player = {
 }
 
 function setup() {
+  window.addEventListener("gamepadconnected", function(e) {
+    CONTROLLERS[e.gamepad.index] = e.gamepad
+    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+    e.gamepad.index, e.gamepad.id,
+    e.gamepad.buttons.length, e.gamepad.axes.length);      
+  });
   createCanvas(...SIZE);
   background(255);
   frameRate(60);
@@ -152,6 +185,8 @@ function keyReleased() {
   KEYS[keyCode] = false;
 }
 
+const mouseSpots = []
+
 function draw() {
   background(255);
   
@@ -161,21 +196,20 @@ function draw() {
   line(0.5 * IN, 2.5 * IN, 2 * IN, 2.5 * IN);
   
   line(2.0 * IN, 2.5 * IN, 4 * IN, 4.5 * IN);
-//   if (mouseDown) {
-//     fill(0)
-//     stroke(0);
-//     strokeWeight(IN/4)
-//     if (lastPos != null){
-//       line(...lastPos, mouseX, mouseY);
-//     }
-//     lastPos = [mouseX, mouseY]
-    
-//     noStroke()
-//     circle(mouseX, mouseY, IN/4)
-//   }
+  
+  for (const p of mouseSpots){
+    fill(0)
+    stroke(0);
+    strokeWeight(IN/4)
+    point(...p)
+  }
   
   //
   loadPixels();
+  
+  if (mouseDown) {
+    mouseSpots.push([mouseX, mouseY])
+  }
   
   player.update(deltaTime/1000);
   
