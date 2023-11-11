@@ -15,6 +15,9 @@ let CONTROLLERS = [];
 
 var skins = [];
 
+let prevTime = 0;
+let debounceTime = 0.15;
+
 function raycast(p, dir, base) {
   let currentColor = get(p[0], p[1])[0];
   let count = 0;
@@ -115,20 +118,23 @@ const player = {
     for (let i in CONTROLLERS) {
       let controller = gamepads[i];
 
+      prevTime += dt;
+
       if (controller.buttons) {
         for (let btn = 0; btn < controller.buttons.length; btn++) {
-          if(controller.buttons[btn].pressed) {
+          print(dt)
+          if(controller.buttons[btn].pressed && prevTime > debounceTime) {
             print ("pushed button value " + btn)
           }
           
-          if (controller.buttons[btn].pressed && btn == 6) {
+          if (controller.buttons[btn].pressed && btn == 6 && prevTime > debounceTime) {
             this.skinIndex--;
             if (this.skinIndex < 0) {
               this.skinIndex = skins.length - 1;
             }
             this.skinIndex %= skins.length;
           }
-          if (controller.buttons[btn].pressed && btn == 7) {
+          if (controller.buttons[btn].pressed && btn == 7 && prevTime > debounceTime) {
             this.skinIndex++;
             this.skinIndex %= skins.length;
           }
@@ -142,6 +148,10 @@ const player = {
             }
           }
         }
+      }
+
+      if(prevTime > debounceTime) {
+        prevTime = 0;
       }
     }
 
