@@ -15,7 +15,6 @@ let CONTROLLERS = [];
 
 var skins = [];
 
-let prevTime = 0;
 let debounceTime = 150;
 let BUTTONDEBOUNCE = {};
 
@@ -123,15 +122,7 @@ const player = {
 
       if (controller.buttons) {
         for (let btn = 0; btn < controller.buttons.length; btn++) {
-          //print(dt)
-          // if(controller.buttons[btn].pressed) {
-          //   print ("pushed button value " + btn +" at " + millis())
-          //   if(BUTTONDEBOUNCE[btn] == undefined || millis() - BUTTONDEBOUNCE[btn] > debounceTime) {
-          //     BUTTONDEBOUNCE[btn] = millis();
-          //     print("valid");
-          //   }
-          // }
-          
+
           if (controller.buttons[btn].pressed && btn == 6 && millis() - (BUTTONDEBOUNCE[6]||0) > debounceTime) {
             this.skinIndex--;
             if (this.skinIndex < 0) {
