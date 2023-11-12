@@ -2,10 +2,10 @@ const average = (array) => array.reduce((a, b) => a + b) / array.length;
 Number.prototype.clamp = function (min, max) {
   return Math.min(Math.max(this, min), max);
 };
-const EDGES = [];
 const IN = 100;
 const SIZE = [9 * IN, 6.5 * IN];
-const PROJECTED = false;
+const PROJECTED = true;
+const EDGES = [];
 
 const KEYS = {};
 let CONTROLLERS = [];
@@ -13,7 +13,7 @@ let CONTROLLERS = [];
 var skins = [];
 
 let debounceTime = 150;
-let BUTTONDEBOUNCE = {};
+let BUTTONTIMERS = {};
 
 function raycast(p, dir, base) {
   let currentColor = get(p[0], p[1])[0];
@@ -33,8 +33,8 @@ function raycast(p, dir, base) {
 const player = {
   x: 1 * IN,
   y: 1 * IN,
-  w: IN / 2,
-  h: IN / 2,
+  w: 2 * IN / 3,
+  h: 2 * IN / 3,
   vx: 0,
   vy: 0,
   ax: 0,
@@ -45,9 +45,11 @@ const player = {
     this.ay = 0;
     this.ax = 0;
 
-    const points = this.getPOI();
-
-    const down = points.map((p) => {
+    const down = floorPoints([
+      [this.x, this.y + this.h],
+      [this.x + this.w/2, this.y + this.h],
+      [this.x + this.w, this.y + this.h],
+    ]).map((p) => {
       const cast = raycast([...p], [0, 1], 255);
       stroke("red");
       strokeWeight(5);
@@ -55,7 +57,11 @@ const player = {
       return cast[1];
     });
 
-    const up = points.map((p) => {
+    const up = floorPoints([
+      [this.x, this.y],
+      [this.x + this.w/2, this.y],
+      [this.x + this.w, this.y],
+    ]).map((p) => {
       const cast = raycast([...p], [0, -1], 255);
       stroke("magenta");
       strokeWeight(5);
@@ -66,7 +72,13 @@ const player = {
     const xMovement = this.vx < 0 ? -1 : this.vx > 0 ? 1 : 0;
 
     if (xMovement != 0) {
-      const xDir = points.map((p) => {
+      const xDir = floorPoints([
+        [this.x + ((xMovement + 1) * this.w), this.y],
+        [this.x + ((xMovement + 1) * this.w), this.y + this.h/3],
+        [this.x + ((xMovement + 1) * this.w), this.y + this.h/2],
+        [this.x + ((xMovement + 1) * this.w), this.y + (2 * this.h)/3],
+        [this.x + ((xMovement + 1) * this.w), this.y + this.h],
+      ]).map((p) => {
         const cast = raycast([...p], [xMovement, 0], 255);
         stroke("blue");
         strokeWeight(5);
@@ -78,6 +90,7 @@ const player = {
 
       if (minDir == 0) {
         // this.vx *= 1 - (0.95 * dt)
+        this.vx = 0
       }
     }
 
@@ -108,30 +121,33 @@ const player = {
     }
 
     // Keyboard input
-    const AX = 96 * IN * dt;
+
+    if (KEYS[38] && this.grounded) {
+      this.vy -= 2 * IN;
+    }
+
+    const AX = 156 * IN * dt;
     let dAX = KEYS[39] ? 1 : KEYS[37] ? -1 : 0;
 
     var gamepads = navigator.getGamepads();
     for (let i in CONTROLLERS) {
       let controller = gamepads[i];
 
-      prevTime += dt;
-
       if (controller.buttons) {
         for (let btn = 0; btn < controller.buttons.length; btn++) {
 
-          if (controller.buttons[btn].pressed && btn == 6 && millis() - (BUTTONDEBOUNCE[6]||0) > debounceTime) {
+          if (controller.buttons[btn].pressed && btn == 6 && millis() - (BUTTONTIMERS[6]||0) > debounceTime) {
             this.skinIndex--;
             if (this.skinIndex < 0) {
               this.skinIndex = skins.length - 1;
             }
             this.skinIndex %= skins.length;
-            BUTTONDEBOUNCE[6] = millis();
+            BUTTONTIMERS[6] = millis();
           }
-          if (controller.buttons[btn].pressed && btn == 7 && millis() - (BUTTONDEBOUNCE[7]||0) > debounceTime) {
+          if (controller.buttons[btn].pressed && btn == 7 && millis() - (BUTTONTIMERS[7]||0) > debounceTime) {
             this.skinIndex++;
             this.skinIndex %= skins.length;
-            BUTTONDEBOUNCE[7] = millis();
+            BUTTONTIMERS[7] = millis();
           }
         }
       }
@@ -168,32 +184,20 @@ const player = {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
   },
-  getPOI: function () {
-    const points = [
-      [this.x, this.y + this.h], // bottom left
-      [this.x + this.w / 2, this.y + this.h], // bottom middle
-      [this.x + this.w, this.y + this.h], // bottom right
-      [this.x, this.y + this.h / 2],
-      [this.x + this.w / 2, this.y + this.h / 2],
-      [this.x + this.w, this.y + this.h / 2],
-    ];
-
-    for (const p of points) {
-      for (const i in p) {
-        p[i] = Math.floor(p[i]);
-      }
-    }
-
-    return points;
-  },
   render: function () {
-    // fill(this.grounded ? "green" : "red");
-    // noStroke();
-    // rect(this.x, this.y, this.w, this.h);
-    //instead of rect use image
     image(skins[this.skinIndex], this.x, this.y, this.w, this.h);
   },
 };
+
+const floorPoints = (points) => {
+  for (const p of points) {
+    for (const i in p) {
+      p[i] = Math.floor(p[i]);
+    }
+  }
+
+  return points;
+}
 
 function preload() {
   skins = [
@@ -223,6 +227,14 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
   frameRate(60);
+
+
+  if (!PROJECTED) {
+    EDGES.push([0, 0]);
+    EDGES.push([SIZE[0], 0]);
+    EDGES.push([SIZE[0], SIZE[1]]);
+    EDGES.push([0, SIZE[1]]);
+  }
 }
 
 function mousePressed() {
@@ -241,13 +253,15 @@ function keyReleased() {
 
 const mouseSpots = [];
 
-const renderLevel = () => {
+renderLevel = () => {
   stroke(0);
   strokeWeight(IN / 4);
-  line(0.5 * IN, 2.5 * IN, 2 * IN, 2.5 * IN);
-  line(2.0 * IN, 2.5 * IN, 4 * IN, 4.5 * IN);
-  line(4 * IN, 4.5 * IN, 8 * IN, 3 * IN);
+  line(0.8 * IN, 2.5 * IN, 3.1 * IN, 2.5 * IN);
+  line(3.8 * IN, 3.5 * IN, 5.4 *  IN, 3.5 * IN)
+  line(6.9 * IN, 2.3 * IN, 9 * IN, 2.3 * IN)
+  line(9.8 * IN, 3.5 * IN, 13 * IN, 6.8 * IN)
 };
+
 
 function draw() {
   background(255);
@@ -263,7 +277,6 @@ function draw() {
   }
 
   //
-  loadPixels();
 
   // if (mouseDown) {
   //   mouseSpots.push([mouseX, mouseY]);
@@ -298,7 +311,7 @@ function draw() {
     scale(sx, sy);
   }
 
-  renderLevel();
+  // renderLevel();
 
   player.render();
   resetMatrix();
