@@ -64,6 +64,8 @@ tvecs = [np.matrix(tvec) for tvec in calibration['tvecs']]
 
 while True:
     ret, frame = cap.read()
+    if not ret:
+        break
 
     h,  w = frame.shape[:2]
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
@@ -128,7 +130,6 @@ while True:
         
         frame = four_point_transform(frame, hull.reshape(4, 2))
 
-        # rot = None
         if centers[0][0] < centers[3][0] and centers[0][1] > centers[3][1]:
             frame = np.rot90(frame, 3)
         elif centers[0][0] > centers[3][0] and centers[0][1] < centers[3][1]:
@@ -147,17 +148,44 @@ while True:
         # Edge detection
         edges = cv2.Canny(image=img, threshold1=100, threshold2=200)
 
+        new_frame = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
         # Look for contours
         contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-        cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
+        
+        # smooth contour
+        contour_img = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
 
         for contour in contours:
-            contourX, contourY, contourW, contourH = cv2.boundingRect(contour)
-            contourMax = max(contourW, contourH)
-            cv2.putText(frame, str(contourMax), (contourX, contourY), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0))
-            cv2.drawContours(frame, contour, -1, (0, 255, 0), 1)
+            peri = cv2.arcLength(contour, True)
 
-        cv2.imshow("img", frame)
+            # draw white filled contour on black background
+            cv2.drawContours(contour_img, [contour], 0, 255, -1)
+
+        # apply dilate to connect the white areas in the alpha channel
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40,40))
+        dilate = cv2.morphologyEx(contour_img, cv2.MORPH_DILATE, kernel)
+
+        # make edge outline
+        edges = cv2.Canny(dilate, 0, 200)
+
+        edges = cv2.GaussianBlur(edges, (0,0), sigmaX=0.5, sigmaY=0.5)
+
+        # complete edges with closing
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (80,80))
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10,10))
+        edges = cv2.morphologyEx(edges, cv2.MORPH_ERODE, kernel)
+
+        contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+
+    
+        for contour in contours:
+            cv2.drawContours(new_frame, [contour], -1, (0, 255, 0), -1)
+            cv2.drawContours(frame, [contour], -1, (0, 255, 0), -1)
+        cv2.imshow("new_frame", new_frame)
+
+    cv2.imshow("img", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
