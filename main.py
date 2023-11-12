@@ -68,6 +68,7 @@ async def get(websocket):
     async for message in websocket:
         if message == "get":
             output = ""
+            print("Getting image...")
             while True:
                 ret, frame = cap.read()
                 if not ret:
@@ -111,6 +112,7 @@ async def get(websocket):
 
 
                 if valid:
+                    print("Valid image found")
                     true_center = np.mean(centers, axis=0)
 
                     inside_points = []
@@ -182,8 +184,11 @@ async def get(websocket):
 
                 
                     for contour in contours:
-                        cv2.drawContours(new_frame, [contour], -1, (0, 255, 0), -1)
-                        cv2.drawContours(frame, [contour], -1, (0, 255, 0), -1)
+                        cv2.drawContours(new_frame, [contour], -1, (255, 255, 255), -1)
+                        # cv2.drawContours(new_frame, [contour], -1, (0, 255, 0), -1)
+                        # cv2.drawContours(frame, [contour], -1, (0, 255, 0), -1)
+                    
+                    new_frame = cv2.bitwise_not(new_frame)
                     output = "data:image/png;base64," + base64.b64encode(cv2.imencode('.png', new_frame)[1]).decode()
                     break
 

@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 opencv-python = "*"
 opencv-contrib-python = "*"
+websockets = "*"
 
 [dev-packages]
 

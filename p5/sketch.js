@@ -9,6 +9,8 @@ const EDGES = [];
 
 const KEYS = {};
 let CONTROLLERS = [];
+let WEBSOCKET = null;
+let backgroundImage = null;
 
 var skins = [];
 
@@ -207,6 +209,8 @@ function preload() {
     loadImage("./skins/purple_guy.png"),
     loadImage("./skins/snake.png"),
   ];
+
+  WEBSOCKET = new WebSocket("ws://localhost:8765");
 }
 
 function setup() {
@@ -231,6 +235,14 @@ function setup() {
     EDGES.push([SIZE[0], SIZE[1]]);
     EDGES.push([0, SIZE[1]]);
   }
+
+  WEBSOCKET.onmessage = function (event) {
+    console.log("Got image")
+    const dataURL = event.data;
+    console.log(dataURL)
+    backgroundImage = loadImage(dataURL);
+  };
+  WEBSOCKET.send("get");
 }
 
 function mousePressed() {
@@ -249,21 +261,19 @@ function keyReleased() {
 
 const mouseSpots = [];
 
-renderLevel = () => {
-  stroke(0);
-  strokeWeight(IN / 4);
-  line(0.8 * IN, 2.5 * IN, 3.1 * IN, 2.5 * IN);
-  line(3.8 * IN, 3.5 * IN, 5.4 *  IN, 3.5 * IN)
-  line(6.9 * IN, 2.3 * IN, 9 * IN, 2.3 * IN)
-  line(9.8 * IN, 3.5 * IN, 13 * IN, 6.8 * IN)
-};
-
-
 function draw() {
+  if (backgroundImage == null) {
+    if (EDGES.length == 4) {
+      background(0);
+    }
+    return;
+  };
+
   background(255);
   noSmooth();
 
-  renderLevel();
+  // renderLevel();
+  image(backgroundImage, 0, 0, SIZE[0], SIZE[1]);
 
   for (const p of mouseSpots) {
     fill(0);
@@ -307,7 +317,6 @@ function draw() {
     scale(sx, sy);
   }
 
-  renderLevel();
   // Border
   stroke(0);
   strokeWeight(IN / 8);
@@ -316,6 +325,7 @@ function draw() {
   line(SIZE[0], SIZE[1], 0, SIZE[1]);
   line(0, SIZE[1], 0, 0);
 
+  // image(backgroundImage, 0, 0, SIZE[0], SIZE[1]);
   player.render();
   resetMatrix();
 }
