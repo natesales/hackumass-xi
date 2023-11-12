@@ -210,7 +210,6 @@ function preload() {
     loadImage("./skins/snake.png"),
   ];
 
-  WEBSOCKET = new WebSocket("ws://localhost:8765");
 }
 
 function setup() {
@@ -236,13 +235,18 @@ function setup() {
     EDGES.push([0, SIZE[1]]);
   }
 
-  WEBSOCKET.onmessage = function (event) {
-    console.log("Got image")
-    const dataURL = event.data;
-    console.log(dataURL)
-    backgroundImage = loadImage(dataURL);
-  };
-  WEBSOCKET.send("get");
+  WEBSOCKET = new WebSocket("ws://localhost:8765");
+
+  WEBSOCKET.addEventListener("open", ()=>{
+    alert("Connected and waiting")
+    WEBSOCKET.onmessage = function (event) {
+      alert("Got image")
+      const dataURL = event.data;
+      console.log(dataURL)
+      backgroundImage = loadImage(dataURL);
+    };
+    WEBSOCKET.send("get");
+  })
 }
 
 function mousePressed() {
@@ -262,7 +266,7 @@ function keyReleased() {
 const mouseSpots = [];
 
 function draw() {
-  if (backgroundImage == null) {
+  if (backgroundImage == null || EDGES.length != 4) {
     if (EDGES.length == 4) {
       background(0);
     }
