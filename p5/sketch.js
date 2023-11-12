@@ -206,7 +206,6 @@ function preload() {
     loadImage("./skins/penguin.png"),
     loadImage("./skins/purple_guy.png"),
     loadImage("./skins/snake.png"),
-    loadImage("./skins/tiger.png"),
   ];
 }
 
